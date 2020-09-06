@@ -1,0 +1,251 @@
+
+
+.container {
+  width: 90%;
+  /* width: 1440px; */
+  background-color: #fafafa;
+  margin: 0 auto;
+  /* text-align: left; */
+  overflow:auto;
+}
+
+
+.title-logo {
+    margin-top: 18px;
+    margin-left: 30px;
+    float: left;
+}
+
+.title-name {
+    margin-top: 26px;
+    margin-left: 11px;
+    float: left;    
+}
+
+header {
+  width: 100%;
+  height: 72px;
+  box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+}
+
+
+.center {
+  margin-top: 60px;
+  margin-left: 270px;
+  
+  /* width: 50%; */
+  
+  
+}
+
+.header-title { 
+  width: 291px;
+  height: 39px;
+  font-family: Lato;
+  font-size: 32px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: normal;
+  color: #343434;
+}
+
+#description {
+  margin-top: 24px;
+  width: 800px;
+  height: 319px;
+  font-family: Lato;
+  font-size: 16px;
+  font-weight: normal;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.38;
+  letter-spacing: normal;
+  color: #343434;
+}
+
+#label-infura{
+  margin-top: 40px;
+  width: 93px;
+  height: 17px;
+  font-family: Lato;
+  font-size: 14px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: normal;
+  color: #343434;
+}
+
+#label-voting-contract{
+    width: 116px;
+    height: 22px;
+    font-family: Lato;
+    font-size: 16px;
+    font-weight: bold;
+    font-stretch: normal;
+    font-style: normal;
+    line-height: 1.38;
+    letter-spacing: normal;
+    color: #343434;
+}
+
+.radio_info {
+  width: 327px;
+  height: 44px;
+  font-family: Lato;
+  font-size: 16px;
+  font-weight: normal;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.38;
+  letter-spacing: normal;
+  color: #343434;
+}
+
+.label-results{
+  width: 800px;
+  height: 22px;
+  font-family: Lato;
+  font-size: 16px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.38;
+  letter-spacing: normal;
+  color: #343434;
+}
+
+
+#input-infura {
+  margin-top: 10px;
+  width: 422px;
+  height: 40px;
+  border-radius: 5px;
+  border: solid 1px #9a9a9a;
+}
+
+#input-voting-contract {
+  margin-top: 10px;
+  width: 422px;
+  height: 40px;
+  border-radius: 5px;
+  border: solid 1px #9a9a9a;
+}
+
+::placeholder { 
+  width: 104px;
+  height: 19px;
+  font-family: Lato;
+  font-size: 16px;
+  font-weight: normal;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: normal;
+  color: #9a9a9a;
+}
+
+#use-data {
+  margin-top: 50px;
+  height : 66px;
+
+}
+
+.btn-calculate {
+  width: 200px;
+  height: 40px;
+  background-color: #134ced;
+  border: none;
+
+  
+  font-family: Lato;
+  font-size: 16px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.38;
+  letter-spacing: normal;
+  color: #ffffff;
+}
+
+#total-voting-result {
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+#total-voting-result table,th,td {
+  border: solid 1px #9a9a9a;
+  text-align: center;
+  height: 40px;
+  font-family: Lato;
+  font-size: 16px;
+  font-weight: normal;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: normal;
+  color: #343434;
+}
+
+#total-voting-result th{
+  background-color: #ffffff;
+  font-weight: bold;
+}
+
+#total-voting-result td:nth-child(1) { 
+  width: 140px;
+}
+
+#total-voting-result td:nth-child(2) { 
+  width: 179px;
+}
+
+
+
+.details-voting-result {
+  border-collapse: collapse;
+  width: 426px;
+}
+
+.details-voting-result table,th,td {
+  border: solid 1px #9a9a9a;
+  text-align: center;
+  height: 40px;
+  font-family: Lato;
+  font-size: 16px;
+  font-weight: normal;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: normal;
+  color: #343434;
+  
+}
+
+.details-voting-result th{
+  background-color: #ffffff;
+  line-height: 1.22;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.details-voting-result td:nth-child(1) { 
+  width: 28px;
+}
+
+.details-voting-result td:nth-child(2) { 
+  border-right: none;
+  text-align: left;
+  padding-left: 28px;
+  
+}
+.details-voting-result td:nth-child(3) { 
+  border-left: none;
+  text-align: right;
+  padding-right: 20px;
+  
+}

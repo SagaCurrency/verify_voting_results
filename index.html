@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Verify Voting Results</title>
+
+    <link rel="stylesheet" type="text/css" href="main.css" />
+
+
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Lato:300,400,700" />
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.2.11/dist/web3.min.js"></script>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+
+    <script src="./js/external/papaparse.js"></script>
+
+    <script type="text/javascript" src="./js/entities.js"></script>
+
+
+    <script
+      type="text/javascript"
+      src="./js/contracts/contract-sga-token.js"
+    ></script>
+
+    <script
+      type="text/javascript"
+      src="./js/contracts/contract-sgn-token.js"
+    ></script>
+
+    <script
+      type="text/javascript"
+      src="./js/contracts/contract-approval-voting.js"
+    ></script>
+
+    <script type="text/javascript" src="./js/saga-balances.js"></script>
+
+    <script
+      type="text/javascript"
+      src="./js/voting-balances-fetcher.js"
+    ></script>
+
+    <script type="text/javascript" src="./js/voting-data-fetcher.js"></script>
+
+    <script type="text/javascript" src="./js/voting-result-display.js"></script>
+
+    <script type="text/javascript" src="./js/web3-connect-manager.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript">
+      const csvBalancesFetcher = new CSVBalancesFetcher(csvBalancesString);
+      const votingResultDisplay = new VotingResultDisplay("results-container");
+      const web3ConnectManager = new Web3ConnectManager();
+
+      $(function () {
+      });
+
+      const getVotingData = () => {
+        handleLoading(true);
+
+          try {
+          const infuraAddress = $("#input-infura").val();
+          const approvalVotingAddress = $("#input-voting-contract").val();
+          const balancesFromInfura = $("#input-infura-balances").prop('checked');
+          const balancesFromCsvFile = $("#input-offchain-balances").prop('checked');
+
+          if (infuraAddress == "")
+            throw "invalid empty infura address";
+
+          if (approvalVotingAddress == "")
+            throw "invalid empty approval voting contract address";
+
+        web3ConnectManager.connect("node_url", infuraAddress);
+
+        const web3 = web3ConnectManager.resultWeb3;
+        const approvalVotingContract = new ApprovalVotingContract(web3, approvalVotingAddress);
+        const sgaTokenContract = new SgaTokenContract(web3, 10781400);
+        const sgnTokenContract = new SgnTokenContract(web3, 10781400);
+        var balancesFetcher;
+
+
+        if (balancesFromCsvFile) {
+          balancesFetcher = csvBalancesFetcher;
+        } else {
+          balancesFetcher = new ContractsBalancesFetcher(
+            sgaTokenContract,
+            sgnTokenContract
+          );
+        }
+
+        const votingDataFetcher = new DefaultVotingDataFetcher(
+          approvalVotingContract,
+          balancesFetcher
+        );
+
+        votingDataFetcher
+          .getVotingData()
+          .then((voterResults) => {
+            votingResultDisplay.loadSummary("total-voting-result", 1, voterResults);
+            votingResultDisplay.loadDetails(2, "for-voting-details", "against-voting-details", voterResults);
+            handleLoading(false);
+            displayResults(true);
+          })
+          .catch((e) => {
+            handleLoading(false);
+            alert(e);
+          });
+} catch (error) {
+  handleLoading(false);
+  alert(error);
+}
+
+
+      };
+
+      const handleLoading = (isLoading) => {
+        if (isLoading)
+         displayResults(false);
+        $("#btn_calc_result").prop('disabled', isLoading);
+      };
+
+      const displayResults = (isToDisplay) => {
+        if (isToDisplay === true){
+          $('#btn_calc_result').css("background-color","#9a9a9a");
+          $("#voting_results").css("visibility", "visible");
+        }
+        else
+        $("#voting_results").css("visibility", "hidden");
+      };
+    </script>
+
+<div class="container">
+  <header>
+    <div >
+    <img src="images/title-logo.svg"
+     class="title-logo">
+     <img src="images/title-name.svg"
+     class="title-name">
+    </div>
+  </header>
+
+  <div id= "content" class="center">
+    <label class="header-title">Verify Voting Results</label>
+    <div id="description">
+      This web application allows everyone to validate the result of the vote on the proposal to amend Saga's Monetary and Governance models. The application is using Infura in order to read relevant information from the Ethereum network, so in order to use it, you should enter a valid endpoint for Infura's API (for example https://mainnet.infura.io/v3/PROJECT_ID).
+        <br><br>
+        Since the result of the vote depends on the SGA and SGN balances at the time the vote has started, there is a need to use an archive node in order to validate the results. If your Infura account doesn't include access to an archive node, you may choose to use the local CSV that holds the balances instead.
+        <br><br>
+        The code of this web application is open-source, ensuring the transparency of the verification process.
+      </div>
+
+    <div><label id="label-infura">Infura Address</label></div>
+    <div><input id="input-infura" type="text" placeholder="Infura Address" /></div>
+
+    <div id="use-data">
+      <div  style="float: left;">
+        <input type="radio" id="input-infura-balances" name="group1" style="float: left;  width: 16px; height: 16px;" value="infura" checked>
+        <label class="radio_info" style="float: left; margin-left: 10px;">Use Infura for historical balances information <br> (necessities an Infura account with access to<br> an archive node)</label>
+      </div>
+
+      <div style="float: left; margin-left: 110px;">
+        <input type="radio" id="input-offchain-balances" name="group1" style="float: left; width: 16px; height: 16px;" value="local_csv">
+        <label class="radio_info" style="float: left; margin-left: 10px;">Use off-chain data (local csv file) for historical <br> balances information</label>
+      </div>
+    </div>
+
+    <div style="margin-top: 50px;"><label id="label-voting-contract">Voting Contract</label></div>
+    <div><input id="input-voting-contract" type="text" value="0xb88183c0d199ad234ee8ae7093476cd7ed69bf58" disabled /></div>
+
+
+    <button id="btn_calc_result"  onclick="getVotingData()" style="margin-top: 24px;" class="btn-calculate">Calculate Results</button>
+
+    <div id="voting_results" style="visibility: hidden; margin-top: 60px; width: 100%;">
+      <p class="header-title">Voting Results</p>
+
+      <div  style="margin-top: 24px;">
+        <div ><label class="label-results">Summary</label></div>
+        <table id="total-voting-result">
+          <tr>
+            <th>Vote</th>
+            <th>Total Voting Power (WEI)</th>
+          </tr>
+        </table>
+      </div>
+
+      <div style="margin-top: 50px; ">
+        <div ><label class="label-results">Details</label></div>
+
+        <div style="margin-top: 10px; float: left;">
+          <table id="for-voting-details" class="details-voting-result">
+            <tr>
+              <th colspan="3">For</th>
+            </tr>
+            <tr>
+              <td style=" font-size: 14px;
+              font-weight: bold;">#</td>
+              <td style=" font-size: 14px;
+              font-weight: bold;">Address</td>
+              <td style=" font-size: 14px;
+              font-weight: bold;">Voting Power (WEI)</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style=" margin-top: 10px; margin-left: 20px; float: left;">
+          <table id="against-voting-details" class="details-voting-result">
+            <tr>
+              <th colspan="3">Against</th>
+            </tr>
+            <tr>
+              <td style=" font-size: 14px;
+              font-weight: bold;">#</td>
+              <td style=" font-size: 14px;
+              font-weight: bold;">Address</td>
+              <td style=" font-size: 14px;
+              font-weight: bold;">Voting Power (WEI)</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  </body>
+</html>
