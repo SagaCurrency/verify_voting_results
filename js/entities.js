@@ -1,32 +1,60 @@
 
 class VoterSupportResult {
-  constructor(voter, isSupport) {
+  constructor(voter, choiceId) {
     this.voter = voter;
-    this.isSupport = isSupport;
+    this.choiceId = choiceId;
   }
 }
 
 class VoterBalanceResult {
-  constructor(voter, sgaBalance, sgnBalance) {
+  constructor(voter, sgrBalance, sgnBalance, stake, votingPower) {
     this.voter = voter;
-    this.sgaBalance = sgaBalance;
+    this.sgrBalance = sgrBalance;
     this.sgnBalance = sgnBalance;
+    this.stake = stake;
+    this.votingPower = votingPower;
   }
 }
 
 class VoterResult {
-  constructor(voter, sgaBalance, sgnBalance, isSupport) {
-    let sgaBalNumber = parseInt(sgaBalance);
-    let sgnBalNumber = parseInt(sgnBalance);
-    if (typeof isSupport !== "boolean") throw "isSupport must be boolean";
-    if (typeof sgaBalNumber !== "number") throw "sgaBalNumber must be number";
-    if (typeof sgnBalNumber !== "number") throw "sgnBalNumber must be number";
+  constructor(voter, sgrBalance, sgnBalance, stake, votingPower, choiceId) {
+    let sgrBalNumber = sgrBalance;
+    let sgnBalNumber = sgnBalance;
+    let votingPowerNumber = votingPower;
+    let choiceIdNumber = parseInt(choiceId);
+    
+    
+    if (typeof choiceIdNumber !== "number") throw "choiceId must be number";
+    if (typeof sgrBalNumber !== "object") throw "sgrBalNumber must be decimal";
+    if (typeof sgnBalNumber !== "object") throw "sgnBalNumber must be decimal";
+    if (typeof stake !== "object") throw "sgnBalNumber must be decimal";
+    if (typeof votingPowerNumber !== "object") throw "votingPowerNumber must be decimal";
     if (typeof voter !== "string") throw "voter must be string";
 
     this.voter = voter;
-    this.sgaBalance = parseInt(sgaBalance);
-    this.sgnBalance = parseInt(sgnBalance);
-    this.isSupport = isSupport;
+    this.sgrBalance = sgrBalNumber;
+    this.sgnBalance = sgnBalNumber;
+    this.stake = stake;
+    this.votingPower = votingPowerNumber;
+    this.choiceId = choiceIdNumber;
   }
 }
 
+class VotingCalculatorConfig {
+  constructor(startBlock, choices) {
+    this.choices = choices;
+    this.startBlock = startBlock;
+  }
+
+  getChoiceName(choiceId) {
+    const choice = this.choices.find(function (c) {
+      return c.choiceId == choiceId;
+    });
+
+    if (typeof choice === "undefined" || !choice)
+      throw "missing choice data";
+
+    return choice.choiceName;
+  }
+
+}

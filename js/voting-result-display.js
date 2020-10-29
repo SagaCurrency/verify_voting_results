@@ -1,42 +1,53 @@
 class VotingResultDisplay {
-  constructor(htmlIdForDisplay) {
+  constructor(htmlIdForDisplay, config) {
     this.htmlIdForDisplay = htmlIdForDisplay;
+    this.config = config;
   }
 
-  loadDetails(overrideFromRow, forTableId, againstTableId, voterResults) {
-    const forVoters = voterResults.filter(voterResult => voterResult.isSupport === true);
-    const againstVoters = voterResults.filter(voterResult => voterResult.isSupport === false);
-    var forCount = 1;
-    var againstCount = 1;
-    var i;
-
-    var forTable = document.getElementById(forTableId);
-    const forTableRowLength = forTable.rows.length;
-    for(i=overrideFromRow; i < forTableRowLength; i++){
-      forTable.deleteRow(overrideFromRow);
-    }
-
-    var againstTable = document.getElementById(againstTableId);
-    const againstTableRowLength = againstTable.rows.length;
-    for(i=overrideFromRow; i < againstTableRowLength; i++){
-      againstTable.deleteRow(overrideFromRow);
-    }
-
-    forVoters.forEach((forVoter) => {
-      const votingPower = forVoter.sgaBalance + forVoter.sgnBalance;
-      this.loadDetailsRow(forTable, forCount, forVoter.voter, votingPower);
-      forCount++;
+  loadDetails(voterResults) {
+    var html = "";
+    var rowCount = 0;
+    this.config.choices.forEach((choice) => {
+      rowCount = 0;
+      var rowsHtml = "";
+      const choiceVoters = voterResults.filter(voterResult => voterResult.choiceId === choice.choiceId);
+      choiceVoters.forEach((voter) => {
+      rowCount++;
+        rowsHtml += `<tr>
+        <td>${rowCount}</td>
+        <td>${voter.voter.substring(0,20) + "..."}</td>
+        <td>${this.convertStakeToFullUnitString(voter.stake)}</td>
+        <td>${voter.votingPower.mul(100).toFixed(2)}%</td>
+        </tr>`;
     });
 
-    againstVoters.forEach((againstVoter) => {
-    
-      const votingPower = againstVoter.sgaBalance + againstVoter.sgnBalance;
-      this.loadDetailsRow(againstTable, againstCount, againstVoter.voter, votingPower);
-      againstCount++;
+    html +=
+      `<div style=" margin-top: 10px; float: left;">
+      <table class="details-voting-result">
+        <tr>
+          <th colspan="4">${choice.choiceName}</th>
+        </tr>
+        <tr>
+          <td style=" font-size: 14px;
+          font-weight: bold;">#</td>
+          <td style=" font-size: 14px;
+          font-weight: bold;">Address</td>
+          <td style=" font-size: 14px;
+          font-weight: bold;">Stake</td>
+          <td style=" font-size: 14px;
+          font-weight: bold;">Democonomy Voting Power</td>
+        </tr>
+        ${rowsHtml}
+      </table>
+      </div>
+      `;
     });
+
+    var detailsTableContainer = document.getElementById("details-tables") ;
+    detailsTableContainer.innerHTML = html;
   }
 
-  loadSummary(tableId, overrideFromRow, voterResults) {
+  loadSummary(overrideFromRow, tableId, voterResults) {
     const summary = this.getSummary(voterResults);
 
     var table = document.getElementById(tableId);
@@ -46,58 +57,54 @@ class VotingResultDisplay {
       table.deleteRow(overrideFromRow);
     }
 
-    this.loadSummaryRow(table, "For", summary.for );
-    this.loadSummaryRow(table, "Againts", summary.against );  
+    summary.forEach(choice => {
+      this.loadSummaryRow(table, this.config.getChoiceName(choice.choiceId) , choice.totalStake, choice.totalVotingPower );
+    }); 
   }
 
 
-
-  loadSummaryRow(table, title, score) {
-
+  loadSummaryRow(table, name, totalStake, totalVotingPower) {
     var row = document.createElement("TR");
     var tdTitle = document.createElement("TD");
-    var tdScore = document.createElement("TD");
-
-    tdTitle.appendChild(document.createTextNode(title));
-    tdScore.appendChild(document.createTextNode(BigInt(score)));
-    row.appendChild(tdTitle);
-    row.appendChild(tdScore);
-
-    table.appendChild(row);
-  }
-
-  loadDetailsRow(table, number, address, votingPower) {
-    
-    var row = document.createElement("TR");
-    var tdNumber = document.createElement("TD");
-    var tdAddress = document.createElement("TD");
+    var tdStake = document.createElement("TD");
     var tdVotingPower = document.createElement("TD");
 
-
-    tdNumber.appendChild(document.createTextNode(number));
-    tdAddress.appendChild(document.createTextNode(address.substring(0,20) + "..."));
-    tdVotingPower.appendChild(document.createTextNode(BigInt(votingPower)));
-
-    row.appendChild(tdNumber);
-    row.appendChild(tdAddress);
+    tdTitle.appendChild(document.createTextNode(name));
+    tdStake.appendChild(document.createTextNode( this.convertStakeToFullUnitString(totalStake)));
+    tdVotingPower.appendChild(document.createTextNode(`${totalVotingPower.mul(100).toFixed(2)}%`));
+    row.appendChild(tdTitle);
+    row.appendChild(tdStake);
     row.appendChild(tdVotingPower);
 
     table.appendChild(row);
-    }
+  }
+
+  
 
   getSummary(voterResults) {
-    var supportsWeight = 0;
-    var notSupportsWeight = 0;
-    voterResults.forEach((voterResult) => {
-      const totalWeight = voterResult.sgaBalance + voterResult.sgnBalance;
-      if (voterResult.isSupport) supportsWeight += totalWeight;
-      else notSupportsWeight += totalWeight;
-    });
+    const result = this.config.choices.map((configChoice) => {
+      var totalStake = new Decimal(0);
+      var totalVotingPower = new Decimal(0);
+      const choiceVoters = voterResults.filter(voterResult => voterResult.choiceId === configChoice.choiceId);
+      choiceVoters.forEach((cv) => {
+        totalStake = totalStake.plus(cv.stake);
+        totalVotingPower = totalVotingPower.plus(cv.votingPower);
+      });
+      return {
+        choiceId : configChoice.choiceId,
+        totalStake : totalStake,
+        totalVotingPower : totalVotingPower
+      };
 
-    return {
-      for : supportsWeight,
-      against : notSupportsWeight
-    };
+    } );
+    return result;
   }
+
+
+  convertStakeToFullUnitString(stake) {
+    return stake.dividedBy(new Decimal("1e+18")).toFixed()
+  }
+
+
 
 }

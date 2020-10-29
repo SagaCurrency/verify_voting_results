@@ -1,9 +1,9 @@
 # Verify Voting Results
 
-This web application allows everyone to validate the result of the vote on the proposal to amend Saga's Monetary and Governance models. The application is using Infura in order to read relevant information from the Ethereum network, so in order to use it, you should enter a valid endpoint for Infura's API \
-(for example https://mainnet.infura.io/v3/<project_ID>). 
+This web application allows everyone to validate the results of votes that were executed on Sögur’s voting platform by reading the necessery information from the Ethereum network and calculting the Democonomy based results. 
+The application is using Infura in order to read relevant information from the Ethereum network, so in order to use it, you should enter a valid endpoint for Infura’s API (for example https://mainnet.infura.io/v3/PROJECT_ID). 
 
-Since the result of the vote depends on the SGA and SGN balances at the time the vote has started, there is a need to use an archive node in order to validate the results. If your Infura account doesn't include access to an archive node, you may choose to use the local CSV that holds the balances instead. 
+Since the result of the vote depends on the SGR and SGN balances at the time the vote has started, there is a need to use an archive node in order to validate the results. If your Infura account doesn’t include access to an archive node, you may choose to use the local CSV that holds the balances instead. 
 
 The code of this web application is open-source, ensuring the transparency of the verification process.
 
@@ -11,7 +11,7 @@ The code of this web application is open-source, ensuring the transparency of th
 
 # License
 
-Copyright (C) 2020 Saga Monetary Technologies Limited
+Copyright (C) 2020 Sogur Monetary Technologies Limited
 
 This program is free software: you can redistribute it and/or modify
 
@@ -33,9 +33,9 @@ You should have received a copy of the GNU General Public License
 
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-Contact Information : info@saga.org
+Contact Information : info@sogur.com
 
-Saga Monetary Technologies Limited\
+Sogur Monetary Technologies Limited\
 201 Haverstock Hill\
 c/o Fkgb Accounting Ltd\
 London, NW3 4QG\

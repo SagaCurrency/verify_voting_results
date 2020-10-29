@@ -1,23 +1,23 @@
 class DefaultVotingDataFetcher {
-  constructor(approvalVotingContract, balancesFetcher) {
+  constructor(approvalVotingContract, balancesFetcher, potentialVotersFetcher) {
     this.approvalVotingContract = approvalVotingContract;
     this.balancesFetcher = balancesFetcher;
+    this.potentialVotersFetcher = potentialVotersFetcher;
   }
 
   getVotingData() {
-    var allVoters;
-
-    return this.approvalVotingContract
-      .getVoters()
-      .then((voters) => {
-        allVoters = voters;
+    return Promise.all([
+      this.approvalVotingContract.getVoters(),
+      this.potentialVotersFetcher.getAllPotentialVoters()
+    ]).then(([voters, allPotentialVoters]) => {
         return Promise.all([
+          Promise.resolve(voters),
           this.approvalVotingContract.getVotings(voters),
-          this.balancesFetcher.getBalances(voters),
+          this.balancesFetcher.getBalances(allPotentialVoters),
         ]);
       })
-      .then(([votersSupportResults, balanceResults]) => {
-         return this.createVoterResults(allVoters, balanceResults, votersSupportResults);
+      .then(([voters, votersSupportResults, balanceResults]) => {
+         return this.createVoterResults(voters, balanceResults, votersSupportResults);
       });
   }
 
@@ -29,14 +29,13 @@ class DefaultVotingDataFetcher {
         return balResult.voter == voter;
       });
 
-      var voterIsSupport = votersSupportResults.find(function (
+      var voterChoice = votersSupportResults.find(function (
         supportResult
       ) {
         return supportResult.voter == voter;
       });
 
-
-      if (typeof voterIsSupport === "undefined" || !voterIsSupport)
+      if (typeof voterChoice === "undefined" || !voterChoice)
           throw "missing voter is support info";
 
       if (typeof voterBalance === "undefined" || !voterBalance)
@@ -45,9 +44,11 @@ class DefaultVotingDataFetcher {
       voterResults.push(
         new VoterResult(
           voter,
-          voterBalance.sgaBalance,
+          voterBalance.sgrBalance,
           voterBalance.sgnBalance,
-          voterIsSupport.isSupport
+          voterBalance.stake,
+          voterBalance.votingPower,
+          voterChoice.choiceId
         )
       );
     });

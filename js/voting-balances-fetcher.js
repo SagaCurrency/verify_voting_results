@@ -1,17 +1,18 @@
 class ContractsBalancesFetcher {
-  constructor(sgaTokenContract, sgnTokenContract) {
-    this.sgaTokenContract = sgaTokenContract;
+  constructor(sgrTokenContract, sgnTokenContract) {
+    this.sgrTokenContract = sgrTokenContract;
     this.sgnTokenContract = sgnTokenContract;
   }
 
-  getBalances(voters) {
+  getBalances(voters) { 
     return Promise.all([
-      this.sgaTokenContract.getBalances(voters),
+      this.sgrTokenContract.getBalances(voters),
       this.sgnTokenContract.getBalances(voters),
-    ]).then(([sgaVoterBalanceResults, sgnVoterBalanceResults]) => {
+    ]).then(([sgrVoterBalanceResults, sgnVoterBalanceResults]) => {   
       var voterBalanceResults = [];
+      var stakes = [];
       voters.forEach((voter) => {
-        var voterSgaBalance = sgaVoterBalanceResults.find(function (balResult) {
+        var voterSgrBalance = sgrVoterBalanceResults.find(function (balResult) {
           return balResult.voter == voter;
         });
 
@@ -19,19 +20,32 @@ class ContractsBalancesFetcher {
           return balResult.voter == voter;
         });
 
-        if (typeof voterSgaBalance === "undefined" || typeof voterSgnBalance === "undefined" || !voterSgaBalance || !voterSgnBalance)
+        if (typeof voterSgrBalance === "undefined" || typeof voterSgnBalance === "undefined" || !voterSgrBalance || !voterSgnBalance)
           throw "missing voter balance data";
-
+  
+        const stake = new Decimal(voterSgrBalance.balance).plus(new Decimal(voterSgnBalance.balance))
+        stakes.push(stake);
+        
         voterBalanceResults.push(
           new VoterBalanceResult(
             voter,
-            BigInt(voterSgaBalance.balance),
-            BigInt(voterSgnBalance.balance)
+            new Decimal(voterSgrBalance.balance),
+            new Decimal(voterSgnBalance.balance),
+            stake,
+            new Decimal(0)
           )
         );
       });
 
-      return voterBalanceResults;
+      return [stakes, voterBalanceResults];
+    })
+    .then( ([stakes, voterBalanceResults]) => {
+      const democonomyVotePowerCalculator = getVotePowerCalculator(Decimal, stakes);
+      
+      return voterBalanceResults.map((voterBalanceResult) => {
+        voterBalanceResult.votingPower = new Decimal(democonomyVotePowerCalculator(voterBalanceResult.stake));
+        return voterBalanceResult;
+      });
     });
   }
 }
@@ -50,13 +64,6 @@ class CSVBalancesFetcher {
   }
 
   loadData(voters) {
-    // Papa.parse(url, {
-    //   download: true,
-    //   header: false,
-    //delimiter: "auto",
-    //   complete: handlePapaCompleteCsvData,
-    // });
-
     const result = Papa.parse(this.csvString, {
       header: false,
       delimiter: "auto",
@@ -70,28 +77,30 @@ class CSVBalancesFetcher {
     var voterBalanceResults = [];
     var parsedData = [];
 
-    if (results.data[0] != "Voter,Sga,Sgn") throw "unexpected csv header";
+    if (results.data[0] != "Voter,Sgr,Sgn,VotingPower") throw "unexpected csv header";
 
     results.data.forEach((resultData) => {
-      if (resultData == "Voter,Sga,Sgn") return;
+      if (resultData == "Voter,Sgr,Sgn,VotingPower") return;
       const dataSplitted = (resultData + "").split(",");
 
-      if (dataSplitted.length != 3) throw "unexpected csv data length";
+      if (dataSplitted.length != 4) throw "unexpected csv data length";
 
       if (dataSplitted[0].startsWith("0x", 0) === false)
         throw "invalid address data";
       if (typeof parseInt(dataSplitted[1]) !== "number")
-        throw "invalid sga balance data";
+        throw "invalid sgr balance data";
       if (typeof parseInt(dataSplitted[2]) !== "number")
         throw "invalid sgn balance data";
+        if (typeof parseInt(dataSplitted[3]) !== "number")
+        throw "invalid voting power data";
 
       parsedData.push({
         voter: dataSplitted[0],
-        sgaBalance: BigInt(dataSplitted[1]),
-        sgnBalance: BigInt(dataSplitted[2]),
+        sgrBalance: new Decimal(dataSplitted[1]),
+        sgnBalance: new Decimal(dataSplitted[2]),
+        votingPower: new Decimal(dataSplitted[3])
       });
     });
-
     
     voters.forEach((voter) => {
       var voterBalances = parsedData.find(function (data) {
@@ -101,15 +110,20 @@ class CSVBalancesFetcher {
       if (typeof voterBalances === "undefined" || !voterBalances)
         throw "Local historical balance information (csv file) is missing or doesn't fit the voting contract's starting block. Make sure you have the right file or use an archive node instead.";
       
+      const stake = voterBalances.sgrBalance.plus(voterBalances.sgnBalance);
+            
       voterBalanceResults.push(
         new VoterBalanceResult(
           voter,
-          voterBalances.sgaBalance,
-          voterBalances.sgnBalance
+          voterBalances.sgrBalance,
+          voterBalances.sgnBalance,
+          stake,
+          voterBalances.votingPower
         )
       );
     });
-
+    
+    
     this.voterBalanceResults = voterBalanceResults;
   }
 }

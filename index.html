@@ -17,12 +17,14 @@
 
     <script src="./js/external/papaparse.js"></script>
 
+    <script src="./js/external/decimal.js"></script>
+
     <script type="text/javascript" src="./js/entities.js"></script>
 
 
     <script
       type="text/javascript"
-      src="./js/contracts/contract-sga-token.js"
+      src="./js/contracts/contract-sgr-token.js"
     ></script>
 
     <script
@@ -35,29 +37,43 @@
       src="./js/contracts/contract-approval-voting.js"
     ></script>
 
-    <script type="text/javascript" src="./js/saga-balances.js"></script>
+    <script type="text/javascript" src="./js/sogur-balances.js"></script>
+
+    
+    <script
+      type="text/javascript"
+      src="./js/democonomy-vote-power-calculator.js"
+    ></script>
 
     <script
       type="text/javascript"
       src="./js/voting-balances-fetcher.js"
     ></script>
 
+    <script
+    type="text/javascript"
+    src="./js/potential-voters-fetcher.js"
+  ></script>
+
     <script type="text/javascript" src="./js/voting-data-fetcher.js"></script>
 
     <script type="text/javascript" src="./js/voting-result-display.js"></script>
 
     <script type="text/javascript" src="./js/web3-connect-manager.js"></script>
+
+    <script type="text/javascript" src="./js/config/voting-calculator-config.js"></script>
   </head>
   <body>
     <script type="text/javascript">
-      const csvBalancesFetcher = new CSVBalancesFetcher(csvBalancesString);
-      const votingResultDisplay = new VotingResultDisplay("results-container");
+      
       const web3ConnectManager = new Web3ConnectManager();
+      const csvBalancesFetcher = new CSVBalancesFetcher(csvBalancesString);
+      const csvPotentialVotersFetcher = new CSVPotentialVotersFetcher(csvBalancesString);
 
       $(function () {
       });
 
-      const getVotingData = () => {
+      const getVotingData  = async () => {
         handleLoading(true);
 
           try {
@@ -76,8 +92,12 @@
 
         const web3 = web3ConnectManager.resultWeb3;
         const approvalVotingContract = new ApprovalVotingContract(web3, approvalVotingAddress);
-        const sgaTokenContract = new SgaTokenContract(web3, 10781400);
-        const sgnTokenContract = new SgnTokenContract(web3, 10781400);
+
+        const votingCalculatorConfigBuilder = new DynamicVotingCalculatorConfigBuilder(approvalVotingContract); 
+        var config =  await votingCalculatorConfigBuilder.build();
+        const votingResultDisplay = new VotingResultDisplay("results-container", config);
+        const sgrTokenContract = new SgrTokenContract(web3, config.startBlock);
+        const sgnTokenContract = new SgnTokenContract(web3, config.startBlock);
         var balancesFetcher;
 
 
@@ -85,21 +105,22 @@
           balancesFetcher = csvBalancesFetcher;
         } else {
           balancesFetcher = new ContractsBalancesFetcher(
-            sgaTokenContract,
+            sgrTokenContract,
             sgnTokenContract
           );
         }
 
         const votingDataFetcher = new DefaultVotingDataFetcher(
           approvalVotingContract,
-          balancesFetcher
+          balancesFetcher,
+          csvPotentialVotersFetcher
         );
 
         votingDataFetcher
           .getVotingData()
           .then((voterResults) => {
-            votingResultDisplay.loadSummary("total-voting-result", 1, voterResults);
-            votingResultDisplay.loadDetails(2, "for-voting-details", "against-voting-details", voterResults);
+            votingResultDisplay.loadSummary(1, "total-voting-result", voterResults);
+            votingResultDisplay.loadDetails(voterResults);
             handleLoading(false);
             displayResults(true);
           })
@@ -144,15 +165,22 @@
   <div id= "content" class="center">
     <label class="header-title">Verify Voting Results</label>
     <div id="description">
-      This web application allows everyone to validate the result of the vote on the proposal to amend Saga's Monetary and Governance models. The application is using Infura in order to read relevant information from the Ethereum network, so in order to use it, you should enter a valid endpoint for Infura's API (for example https://mainnet.infura.io/v3/PROJECT_ID).
+      This web application allows everyone to validate the results of votes that were executed on Sögur’s voting platform by reading the necessery information from the Ethereum network and calculting the Democonomy based results. 
+The application is using Infura in order to read relevant information from the Ethereum network, so in order to use it, you should enter a valid endpoint for Infura’s API (for example https://mainnet.infura.io/v3/PROJECT_ID). Since the result of the vote depends on the SGR and SGN balances at the time the vote has started, there is a need to use an archive node in order to validate the results. If your Infura account doesn’t include access to an archive node, you may choose to use the local CSV that holds the balances instead. 
+The code of this web application is open-source, ensuring the transparency of the verification process.
         <br><br>
-        Since the result of the vote depends on the SGA and SGN balances at the time the vote has started, there is a need to use an archive node in order to validate the results. If your Infura account doesn't include access to an archive node, you may choose to use the local CSV that holds the balances instead.
-        <br><br>
-        The code of this web application is open-source, ensuring the transparency of the verification process.
-      </div>
 
+        3rd Parties
+        <br><br>
+        Web3.js - <a target="_blank" href="https://github.com/ethereum/web3.js/blob/v1.2.11/LICENSE">https://github.com/ethereum/web3.js/blob/v1.2.11/LICENSE</a><br>
+        PapaParse - <a target="_blank" href="https://github.com/mholt/PapaParse/blob/5.3.0/LICENSE">https://github.com/mholt/PapaParse/blob/5.3.0/LICENSE</a> <br>
+        JQuery - <a target="_blank" href="https://github.com/jquery/jquery/blob/3.5.0/LICENSE.txt">https://github.com/jquery/jquery/blob/3.5.0/LICENSE.txt</a> <br>
+        MikeMcl - <a target="_blank" href="https://github.com/MikeMcl/decimal.js/blob/v10.2.1/LICENCE.md">https://github.com/MikeMcl/decimal.js/blob/v10.2.1/LICENCE.md</a> <br>
+        
+      </div>
+    
     <div><label id="label-infura">Infura Address</label></div>
-    <div><input id="input-infura" type="text" placeholder="Infura Address" /></div>
+    <div><input id="input-infura" type="text" placeholder="Infura Address"  /></div>
 
     <div id="use-data">
       <div  style="float: left;">
@@ -167,7 +195,7 @@
     </div>
 
     <div style="margin-top: 50px;"><label id="label-voting-contract">Voting Contract</label></div>
-    <div><input id="input-voting-contract" type="text" value="0xb88183c0d199ad234ee8ae7093476cd7ed69bf58" disabled /></div>
+    <div><input id="input-voting-contract" type="text" value="0xe0a9d8ecaca23002e5c946d359945f6e03115a27" disabled  /></div>
 
 
     <button id="btn_calc_result"  onclick="getVotingData()" style="margin-top: 24px;" class="btn-calculate">Calculate Results</button>
@@ -180,44 +208,15 @@
         <table id="total-voting-result">
           <tr>
             <th>Vote</th>
-            <th>Total Voting Power (WEI)</th>
+            <th>Total Voting Stake</th>
+            <th>Total Democonomy Voting Power</th>
           </tr>
         </table>
       </div>
 
       <div style="margin-top: 50px; ">
         <div ><label class="label-results">Details</label></div>
-
-        <div style="margin-top: 10px; float: left;">
-          <table id="for-voting-details" class="details-voting-result">
-            <tr>
-              <th colspan="3">For</th>
-            </tr>
-            <tr>
-              <td style=" font-size: 14px;
-              font-weight: bold;">#</td>
-              <td style=" font-size: 14px;
-              font-weight: bold;">Address</td>
-              <td style=" font-size: 14px;
-              font-weight: bold;">Voting Power (WEI)</td>
-            </tr>
-          </table>
-        </div>
-
-        <div style=" margin-top: 10px; margin-left: 20px; float: left;">
-          <table id="against-voting-details" class="details-voting-result">
-            <tr>
-              <th colspan="3">Against</th>
-            </tr>
-            <tr>
-              <td style=" font-size: 14px;
-              font-weight: bold;">#</td>
-              <td style=" font-size: 14px;
-              font-weight: bold;">Address</td>
-              <td style=" font-size: 14px;
-              font-weight: bold;">Voting Power (WEI)</td>
-            </tr>
-          </table>
+        <div id ="details-tables">
         </div>
       </div>
     </div>
