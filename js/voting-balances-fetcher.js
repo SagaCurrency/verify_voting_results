@@ -51,8 +51,8 @@ class ContractsBalancesFetcher {
 }
 
 class CSVBalancesFetcher {
-  constructor(csvString) {
-    this.csvString = csvString;
+  constructor(balancesCSVFile) {
+    this.balancesCSVFile = balancesCSVFile;
   }
 
   getBalances(voters) {
@@ -63,28 +63,34 @@ class CSVBalancesFetcher {
     }
   }
 
-  loadData(voters) {
-    const result = Papa.parse(this.csvString, {
-      header: false,
-      delimiter: "auto",
-    });
+  async loadData(voters) {
+    var results =  await new Promise((resolve, reject) => {
+      
+      Papa.parse(this.balancesCSVFile, {
+          skipEmptyLines: true,
+          header: false,
+          delimiter: "auto",
+          complete: function(results) {
+            resolve(results);
+          },
+          error: function(error) {
+              reject(error);
+          }
+      });
+  });
 
-    this.handlePapaCallback(voters, result);
-
-    return Promise.resolve("");
+  return Promise.resolve(this.parsePapaResults(voters, results));
   }
-  handlePapaCallback(voters, results, file) {
+
+  
+  parsePapaResults(voters, results) {
     var voterBalanceResults = [];
     var parsedData = [];
-
-    if (results.data[0] != "Voter,Sgr,Sgn,VotingPower") throw "unexpected csv header";
-
+    
     results.data.forEach((resultData) => {
-      if (resultData == "Voter,Sgr,Sgn,VotingPower") return;
-      const dataSplitted = (resultData + "").split(",");
-
-      if (dataSplitted.length != 4) throw "unexpected csv data length";
-
+      const dataSplitted = (resultData + "").split(","); 
+      if (dataSplitted.length != 5) throw "unexpected csv data length";
+      
       if (dataSplitted[0].startsWith("0x", 0) === false)
         throw "invalid address data";
       if (typeof parseInt(dataSplitted[1]) !== "number")
@@ -94,6 +100,7 @@ class CSVBalancesFetcher {
         if (typeof parseInt(dataSplitted[3]) !== "number")
         throw "invalid voting power data";
 
+   
       parsedData.push({
         voter: dataSplitted[0],
         sgrBalance: new Decimal(dataSplitted[1]),

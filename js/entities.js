@@ -44,6 +44,7 @@ class VotingCalculatorConfig {
   constructor(startBlock, choices) {
     this.choices = choices;
     this.startBlock = startBlock;
+    this.balancesCSVUrl = `https://wallet-balances.sogur.com/${startBlock}.csv`;
   }
 
   getChoiceName(choiceId) {

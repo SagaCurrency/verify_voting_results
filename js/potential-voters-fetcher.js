@@ -1,6 +1,6 @@
 class CSVPotentialVotersFetcher {
-  constructor(csvString) {
-    this.csvString = csvString;
+  constructor(balancesCSVFile) {
+    this.balancesCSVFile = balancesCSVFile;
   }
 
   getAllPotentialVoters() {
@@ -15,25 +15,33 @@ class CSVPotentialVotersFetcher {
     }
   }
 
-  loadData() {
-    const result = Papa.parse(this.csvString, {
-      header: false,
-      delimiter: "auto",
-    });
+  async loadData() {
+    var results =  await new Promise((resolve, reject) => {
+      
+      Papa.parse(this.balancesCSVFile, {
+          skipEmptyLines: true,  
+          header: false,
+          delimiter: "auto",
+          complete: function(results) {
+            resolve(results);
+          },
+          error: function(error) {
+            reject(error);
+          }
+      });
+  });
 
-    return Promise.resolve(this.handlePapaCallback(result));
-  }
+  return Promise.resolve(this.parsePapaResults(results));
+}
 
-  handlePapaCallback(results) {
+  parsePapaResults(results) {
     var allPotentialVoters = [];
 
-    if (results.data[0] != "Voter,Sgr,Sgn,VotingPower") throw "unexpected csv header";
-
     results.data.forEach((resultData) => {
-      if (resultData == "Voter,Sgr,Sgn,VotingPower") return;
+      
       const dataSplitted = (resultData + "").split(",");
-
-      if (dataSplitted.length != 4) throw "unexpected csv data length";
+      
+      if (dataSplitted.length != 5) throw "unexpected csv data length";
 
       if (dataSplitted[0].startsWith("0x", 0) === false)
         throw "invalid address data";

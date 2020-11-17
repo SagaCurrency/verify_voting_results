@@ -37,8 +37,6 @@
       src="./js/contracts/contract-approval-voting.js"
     ></script>
 
-    <script type="text/javascript" src="./js/sogur-balances.js"></script>
-
     
     <script
       type="text/javascript"
@@ -67,20 +65,20 @@
     <script type="text/javascript">
       
       const web3ConnectManager = new Web3ConnectManager();
-      const csvBalancesFetcher = new CSVBalancesFetcher(csvBalancesString);
-      const csvPotentialVotersFetcher = new CSVPotentialVotersFetcher(csvBalancesString);
-
+      
       $(function () {
       });
 
-      const getVotingData  = async () => {
+      const getVotingData  = async (fetchLink) => {
         handleLoading(true);
-
+      
           try {
           const infuraAddress = $("#input-infura").val();
           const approvalVotingAddress = $("#input-voting-contract").val();
           const balancesFromInfura = $("#input-infura-balances").prop('checked');
           const balancesFromCsvFile = $("#input-offchain-balances").prop('checked');
+          const files = document.getElementById('input-balances-file').files;
+          
 
           if (infuraAddress == "")
             throw "invalid empty infura address";
@@ -88,13 +86,34 @@
           if (approvalVotingAddress == "")
             throw "invalid empty approval voting contract address";
 
+                   
         web3ConnectManager.connect("node_url", infuraAddress);
 
         const web3 = web3ConnectManager.resultWeb3;
         const approvalVotingContract = new ApprovalVotingContract(web3, approvalVotingAddress);
-
+        
+        
         const votingCalculatorConfigBuilder = new DynamicVotingCalculatorConfigBuilder(approvalVotingContract); 
         var config =  await votingCalculatorConfigBuilder.build();
+        
+    
+        $("#balances-file-download-link").attr("href", config.balancesCSVUrl);
+        $("#balances-file-download-link").html(config.balancesCSVUrl);
+        $("#balances-file-download-link-div").show();
+        
+        if (fetchLink === true){
+          handleLoading(false);
+          return;
+        }
+
+        if (files.length == 0){
+          throw "No balances file selected";
+        }
+           
+        const selectedBalancesFile = files[0];
+        const csvBalancesFetcher = new CSVBalancesFetcher(selectedBalancesFile);
+        const csvPotentialVotersFetcher = new CSVPotentialVotersFetcher(selectedBalancesFile);
+
         const votingResultDisplay = new VotingResultDisplay("results-container", config);
         const sgrTokenContract = new SgrTokenContract(web3, config.startBlock);
         const sgnTokenContract = new SgnTokenContract(web3, config.startBlock);
@@ -139,12 +158,12 @@
       const handleLoading = (isLoading) => {
         if (isLoading)
          displayResults(false);
-        $("#btn_calc_result").prop('disabled', isLoading);
+        $(".btn-calculate").prop('disabled', isLoading);
       };
 
       const displayResults = (isToDisplay) => {
         if (isToDisplay === true){
-          $('#btn_calc_result').css("background-color","#9a9a9a");
+          $('.btn-calculate').css("background-color","#9a9a9a");
           $("#voting_results").css("visibility", "visible");
         }
         else
@@ -180,7 +199,24 @@ The code of this web application is open-source, ensuring the transparency of th
       </div>
     
     <div><label id="label-infura">Infura Address</label></div>
-    <div><input id="input-infura" type="text" placeholder="Infura Address"  /></div>
+    <div><input id="input-infura" type="text" placeholder="Infura Address"/></div>
+
+    <div style="margin-top: 50px;"><label id="label-voting-contract">Voting Contract</label></div>
+    <div><input id="input-voting-contract" type="text" /></div>
+
+    
+    <div style="margin-top: 50px;" >
+    <div style="float: left;">
+      <button   onclick="getVotingData(true)"  class="btn-calculate">Get Balances CSV Link</button>
+    </div>
+    <div id="balances-file-download-link-div" style="margin-top: 8px; margin-left: 30px; display: none; float: left;" >
+      <a href="" id="balances-file-download-link"></a>
+    </div>
+  </div>
+
+    <div style="margin-top: 130px;"><label id="label-balances-file" >Select your downloaded balances CSV file location:</label></div>
+    <div style="margin-top: 10px;" ><input id="input-balances-file" type="file" accept=".csv" />  </div> 
+
 
     <div id="use-data">
       <div  style="float: left;">
@@ -194,11 +230,8 @@ The code of this web application is open-source, ensuring the transparency of th
       </div>
     </div>
 
-    <div style="margin-top: 50px;"><label id="label-voting-contract">Voting Contract</label></div>
-    <div><input id="input-voting-contract" type="text" value="0xe0a9d8ecaca23002e5c946d359945f6e03115a27" disabled  /></div>
-
-
-    <button id="btn_calc_result"  onclick="getVotingData()" style="margin-top: 24px;" class="btn-calculate">Calculate Results</button>
+    
+    <button   onclick="getVotingData(false)" style="margin-top: 24px;" class="btn-calculate">Calculate Results</button>
 
     <div id="voting_results" style="visibility: hidden; margin-top: 60px; width: 100%;">
       <p class="header-title">Voting Results</p>
